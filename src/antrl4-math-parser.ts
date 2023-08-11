@@ -3,8 +3,9 @@ import { CharStreams, CommonTokenStream, CommonToken } from 'antlr4ts';
 import { styleTags, tags, Tag } from "@lezer/highlight";
 import { StreamLanguage, /* HighlightStyle,*/ } from "@codemirror/language";
 // import { tags } from "@lezer/highlight";
-import { CustomColumnExpressionsLexer } from './antrl4-lang-grammar/CustomColumnExpressionsLexer';
-
+//import { CustomColumnExpressionsLexer } from './antrl4-lang-grammar/CustomColumnExpressionsLexer';
+import { MathCalculatorLexer } from './MathCalculator/MathCalculatorLexer';
+import {MathCalculatorParser} from "./MathCalculator/MathCalculatorParser";
 function getStyleNameByTag(tag: Tag): string {
     for (let t in tags) {
         if ((tags as any)[t] === tag) {
@@ -15,7 +16,7 @@ function getStyleNameByTag(tag: Tag): string {
     return '';
 }
 function getTokenNameByTokenValue(tokenValue: number): string {
-    const lexer = CustomColumnExpressionsLexer;
+    const lexer = MathCalculatorLexer;
     for (let tokenName in lexer) {
         if (((lexer as any)[tokenName] as number) === tokenValue) {
             return tokenName;
@@ -39,11 +40,17 @@ function getTokens(tokens: CommonToken[]) {
 
 export function getTokensForText(text: string) {
     var chars = CharStreams.fromString(text);
-    var lexer = new CustomColumnExpressionsLexer(chars);
+    var lexer = new MathCalculatorLexer(chars);
     var tokensStream = new CommonTokenStream(lexer);
     tokensStream.fill();
     return getTokens((tokensStream as any).tokens);
   }
+
+export function getTokensStream(text: string) {
+    var chars = CharStreams.fromString(text);
+    var lexer = new MathCalculatorLexer(chars);
+    return new CommonTokenStream(lexer);
+}
 
 
 // const myHighlightStyle = HighlightStyle.define([
@@ -51,20 +58,25 @@ export function getTokensForText(text: string) {
 //   { tag: tags.comment, color: "#f5d", fontStyle: "italic" }
 // ]);
 
-  export const antrl4Lang = StreamLanguage.define({
+  export const antrl4MathParser = StreamLanguage.define({
     token: (stream, state) => {
+        console.log('stream', stream)
         const tokens = getTokensForText(stream.string);
+        const tStream = getTokensStream(stream.string)
+        const parser = new MathCalculatorParser(tStream)
         const nextToken = tokens.filter(t => t.startIndex >= stream.pos)[0];
         // we iterate over the stream and match the token text to advance the stream
         // returning the token type that is used for the styling
-        if (nextToken.type !== CustomColumnExpressionsLexer.EOF && stream.match(nextToken.text)) {
+        if (nextToken.type !== MathCalculatorLexer.EOF && stream.match(nextToken.text)) {
             let valueClass = getStyleNameByTag(tags.keyword);
+
             console.log('nextToken.type', nextToken)
             switch (nextToken.type) {
-                case CustomColumnExpressionsLexer.STRING_VALUE:
+                case MathCalculatorLexer.FUNCTIONS:
+                    console.log('vvvvv')
                     valueClass = getStyleNameByTag(tags.string);
                     break;
-                case CustomColumnExpressionsLexer.NUMERIC_VALUE:
+                case MathCalculatorLexer.NUMBER:
                     valueClass = getStyleNameByTag(tags.number);
                     break;
                 default: 

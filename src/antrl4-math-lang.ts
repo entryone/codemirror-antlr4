@@ -2,9 +2,8 @@
 import { CharStreams, CommonTokenStream, CommonToken } from 'antlr4ts';
 import { styleTags, tags, Tag } from "@lezer/highlight";
 import { StreamLanguage, /* HighlightStyle,*/ } from "@codemirror/language";
-// import { tags } from "@lezer/highlight";
-import { CustomColumnExpressionsLexer } from './antrl4-lang-grammar/CustomColumnExpressionsLexer';
-
+import { MathCalculatorLexer } from './MathCalculator/MathCalculatorLexer';
+import { Interval } from "antlr4ts/misc/Interval";
 function getStyleNameByTag(tag: Tag): string {
     for (let t in tags) {
         if ((tags as any)[t] === tag) {
@@ -15,7 +14,7 @@ function getStyleNameByTag(tag: Tag): string {
     return '';
 }
 function getTokenNameByTokenValue(tokenValue: number): string {
-    const lexer = CustomColumnExpressionsLexer;
+    const lexer = MathCalculatorLexer;
     for (let tokenName in lexer) {
         if (((lexer as any)[tokenName] as number) === tokenValue) {
             return tokenName;
@@ -39,7 +38,20 @@ function getTokens(tokens: CommonToken[]) {
 
 export function getTokensForText(text: string) {
     var chars = CharStreams.fromString(text);
-    var lexer = new CustomColumnExpressionsLexer(chars);
+    //console.log('chars', chars)
+    var lexer = new MathCalculatorLexer(chars);
+    lexer.notifyListeners = (e) => {
+        //console.log('eerr', e)
+        //debugger
+        let text = lexer.inputStream.getText(Interval.of(lexer._tokenStartCharIndex, lexer._input.index));
+        let msg = lexer._tokenStartCharIndex + ":" + lexer._input.index + ": token recognition error at: '" +
+            lexer.getErrorDisplay(text) + "'";
+        console.log('error', msg)
+        //let listener = lexer.getErrorListenerDispatch();
+        //if (listener.syntaxError) {
+        //    listener.syntaxError(lexer, undefined, lexer._tokenStartLine, lexer._tokenStartCharPositionInLine, msg, e);
+        //}
+    }
     var tokensStream = new CommonTokenStream(lexer);
     tokensStream.fill();
     return getTokens((tokensStream as any).tokens);
@@ -51,20 +63,21 @@ export function getTokensForText(text: string) {
 //   { tag: tags.comment, color: "#f5d", fontStyle: "italic" }
 // ]);
 
-  export const antrl4Lang = StreamLanguage.define({
+  export const antrl4MathLang = StreamLanguage.define({
     token: (stream, state) => {
         const tokens = getTokensForText(stream.string);
         const nextToken = tokens.filter(t => t.startIndex >= stream.pos)[0];
         // we iterate over the stream and match the token text to advance the stream
         // returning the token type that is used for the styling
-        if (nextToken.type !== CustomColumnExpressionsLexer.EOF && stream.match(nextToken.text)) {
+        if (nextToken.type !== MathCalculatorLexer.EOF && stream.match(nextToken.text)) {
             let valueClass = getStyleNameByTag(tags.keyword);
-            console.log('nextToken.type', nextToken)
+
+
             switch (nextToken.type) {
-                case CustomColumnExpressionsLexer.STRING_VALUE:
+                case MathCalculatorLexer.FUNCTIONS:
                     valueClass = getStyleNameByTag(tags.string);
                     break;
-                case CustomColumnExpressionsLexer.NUMERIC_VALUE:
+                case MathCalculatorLexer.NUMBER:
                     valueClass = getStyleNameByTag(tags.number);
                     break;
                 default: 

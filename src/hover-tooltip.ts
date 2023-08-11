@@ -6,6 +6,7 @@ export const wordHover = hoverTooltip((view, pos, side) => {
   const tokens = getTokensForText(text);
   let start = pos;
   let end = pos;
+  console.log('tokens', tokens)
 
   const currToken = tokens.find(
     (t) => t.startIndex <= pos - from && t.stopIndex >= pos - from
